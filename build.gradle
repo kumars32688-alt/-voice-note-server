@@ -1,0 +1,11 @@
+// Top-level build file for Voice Note App
+// This file configures plugins used across the entire project
+
+plugins {
+    id 'com.android.application' version '8.1.0' apply false
+    id 'com.google.gms.google-services' version '4.3.15' apply false
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

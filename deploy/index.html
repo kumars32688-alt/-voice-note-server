@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="hi-en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Voice Note</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+  font-family:-apple-system,'SF Pro Display','Segoe UI',sans-serif;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#0d2010;
+  overflow:hidden;
+}
+
+/* Nature background */
+.bg{
+  position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(30,80,20,0.95) 0%,transparent 55%),
+    radial-gradient(ellipse at 70% 70%, rgba(15,55,10,0.9) 0%,transparent 50%),
+    radial-gradient(ellipse at 60% 20%, rgba(40,90,25,0.8) 0%,transparent 45%),
+    linear-gradient(150deg,#071a09 0%,#0e2e12 40%,#081c0a 100%);
+}
+/* subtle leaf shadows */
+.bg::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 15% 80%,rgba(60,130,30,0.08) 0%,transparent 100%),
+    radial-gradient(ellipse 40% 60% at 85% 20%,rgba(80,160,40,0.06) 0%,transparent 100%);
+}
+
+/* Glass utility */
+.g{
+  background:rgba(255,255,255,0.13);
+  backdrop-filter:blur(24px) saturate(160%);
+  -webkit-backdrop-filter:blur(24px) saturate(160%);
+  border:1px solid rgba(255,255,255,0.22);
+}
+.gd{
+  background:rgba(0,0,0,0.28);
+  backdrop-filter:blur(24px) saturate(140%);
+  -webkit-backdrop-filter:blur(24px) saturate(140%);
+  border:1px solid rgba(255,255,255,0.1);
+}
+
+/* ─── SETUP ─── */
+#setupScreen{
+  position:relative;z-index:10;
+  width:320px;padding:32px 24px;
+  border-radius:28px;text-align:center;
+}
+#setupScreen h2{font-size:22px;font-weight:700;color:#fff;margin-bottom:6px;}
+#setupScreen p{font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:24px;}
+#setupName{
+  width:100%;padding:13px 16px;margin-bottom:12px;
+  border-radius:14px;border:1px solid rgba(255,255,255,0.22);
+  background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);
+  color:#fff;font-size:15px;text-align:center;outline:none;
+}
+#setupName::placeholder{color:rgba(255,255,255,0.38);}
+#setupName:focus{border-color:rgba(255,255,255,0.45);}
+.go-btn{
+  width:100%;padding:13px;border-radius:50px;border:none;
+  background:rgba(255,255,255,0.18);backdrop-filter:blur(10px);
+  color:#fff;font-size:15px;font-weight:600;cursor:pointer;
+  transition:background .2s,transform .15s;
+}
+.go-btn:active{transform:scale(.97);background:rgba(255,255,255,0.25);}
+
+/* ─── MAIN APP ─── */
+#appScreen{
+  display:none;position:relative;z-index:10;
+  width:320px;
+}
+
+/* user bar */
+.ubar{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:10px;padding:0 2px;
+}
+.uname{font-size:13px;font-weight:600;color:rgba(255,255,255,.85);}
+.uid{
+  font-size:10px;color:rgba(255,255,255,.45);cursor:pointer;
+  padding:3px 9px;border-radius:10px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+}
+
+/* status pill — like Focus in iOS */
+.spill{
+  border-radius:18px;padding:10px 14px;
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:10px;cursor:pointer;transition:transform .15s;
+}
+.spill:active{transform:scale(.97);}
+.sdot{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;flex-shrink:0;
+  background:rgba(34,197,94,.25);
+}
+.sdot.red{background:rgba(239,68,68,.25);}
+.sdot.blue{background:rgba(59,130,246,.25);}
+.slabel{font-size:14px;font-weight:700;color:#fff;flex:1;}
+.ssub{font-size:10px;color:rgba(255,255,255,.45);margin-top:1px;}
+.sarrow{font-size:14px;color:rgba(255,255,255,.3);}
+
+/* live text */
+.livebar{
+  border-radius:13px;padding:9px 13px;
+  display:none;align-items:center;gap:8px;margin-bottom:9px;
+}
+.livebar.on{display:flex;}
+.pulse{width:7px;height:7px;border-radius:50%;background:#ef4444;flex-shrink:0;
+  animation:p 1s infinite;}
+@keyframes p{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.4);}}
+.livetext{font-size:12px;color:#fff;line-height:1.4;}
+
+/* result */
+.res{border-radius:13px;padding:9px 13px;text-align:center;
+  font-size:12px;font-weight:600;display:none;margin-bottom:9px;}
+.res.ok{display:block;background:rgba(34,197,94,.18);
+  border:1px solid rgba(34,197,94,.3);color:#86efac;}
+.res.err{display:block;background:rgba(239,68,68,.18);
+  border:1px solid rgba(239,68,68,.3);color:#fca5a5;}
+
+/* ── CC GRID ── */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  grid-template-rows:auto auto;
+  gap:9px;margin-bottom:9px;
+}
+
+/* big pill — 2 cols wide */
+.bp{
+  grid-column:span 2;border-radius:18px;padding:13px 14px;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;transition:transform .15s;
+}
+.bp:active{transform:scale(.96);}
+.bpico{
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(255,255,255,.13);
+  display:flex;align-items:center;justify-content:center;
+  font-size:19px;flex-shrink:0;
+}
+.bplbl{font-size:13px;font-weight:700;color:#fff;}
+.bpsub{font-size:10px;color:rgba(255,255,255,.5);margin-top:1px;}
+
+/* tall pill — 1 col, 2 rows */
+.tp{
+  grid-row:span 2;border-radius:18px;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:5px;
+  cursor:pointer;transition:transform .15s;padding:10px 6px;
+}
+.tp:active{transform:scale(.96);}
+.tpico{font-size:22px;}
+.tpnum{font-size:24px;font-weight:700;color:#fff;}
+.tplbl{font-size:10px;font-weight:600;color:rgba(255,255,255,.7);text-align:center;}
+
+/* circle row */
+.crow{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:9px;margin-bottom:8px;
+}
+.cb{
+  border-radius:50%;aspect-ratio:1;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;cursor:pointer;
+  transition:transform .15s;
+}
+.cb:active{transform:scale(.92);}
+.cbico{font-size:20px;}
+.cblbl{font-size:9px;font-weight:600;color:rgba(255,255,255,.7);text-align:center;}
+
+/* hint */
+.hint{text-align:center;font-size:11px;color:rgba(255,255,255,.38);padding:4px;}
+
+/* ─── MODAL ─── */
+.mbg{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(5px);
+  z-index:100;align-items:flex-end;
+}
+.mbg.on{display:flex;}
+.msheet{
+  width:100%;border-radius:22px 22px 0 0;padding:16px 16px 36px;
+  max-height:78vh;overflow-y:auto;
+}
+.mhandle{width:34px;height:4px;background:rgba(255,255,255,.25);
+  border-radius:2px;margin:0 auto 16px;}
+.mtitle{font-size:16px;font-weight:700;color:#fff;margin-bottom:14px;text-align:center;}
+
+/* inbox row */
+.irow{
+  display:flex;align-items:center;gap:10px;padding:11px 10px;
+  border-radius:14px;margin-bottom:7px;cursor:pointer;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+  transition:transform .13s;
+}
+.irow:active{transform:scale(.98);}
+.irow.unread{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.3);}
+.iav{width:36px;height:36px;border-radius:50%;background:rgba(59,130,246,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:700;color:#fff;flex-shrink:0;}
+.ifrom{font-size:13px;font-weight:600;color:#fff;}
+.iprev{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px;}
+.itime{font-size:10px;color:rgba(255,255,255,.35);margin-top:1px;}
+.nbadge{background:#3b82f6;color:#fff;font-size:9px;font-weight:700;
+  padding:2px 7px;border-radius:8px;white-space:nowrap;}
+
+/* sent row */
+.srow{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;
+  border-radius:14px;margin-bottom:7px;
+  background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);
+}
+.sav{width:32px;height:32px;border-radius:50%;background:rgba(34,197,94,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:#fff;flex-shrink:0;}
+.sto{font-size:12px;font-weight:600;color:#86efac;}
+.stxt{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px;}
+.stime{font-size:10px;color:rgba(255,255,255,.3);}
+
+/* contact row */
+.crow2{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;
+  border-radius:14px;margin-bottom:7px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+}
+.cav{width:32px;height:32px;border-radius:50%;background:rgba(124,58,237,.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:700;color:#fff;flex-shrink:0;}
+.cnm{font-size:13px;font-weight:600;color:#fff;flex:1;}
+.cid2{font-size:10px;color:rgba(255,255,255,.38);}
+.xbtn{background:none;border:none;color:rgba(255,255,255,.35);
+  font-size:16px;cursor:pointer;padding:4px 8px;}
+
+.addrow{display:flex;gap:7px;margin-bottom:12px;}
+.addinp{
+  flex:1;padding:9px 12px;border-radius:12px;
+  border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.1);backdrop-filter:blur(10px);
+  color:#fff;font-size:12px;outline:none;
+}
+.addinp::placeholder{color:rgba(255,255,255,.38);}
+.addbtn{
+  padding:9px 14px;border-radius:12px;
+  background:rgba(124,58,237,.4);border:1px solid rgba(124,58,237,.5);
+  color:#fff;font-size:12px;font-weight:600;cursor:pointer;
+}
+
+/* empty */
+.empty{text-align:center;color:rgba(255,255,255,.32);padding:28px;font-size:12px;}
+
+/* toast */
+.toast{
+  display:none;position:fixed;bottom:36px;left:50%;
+  transform:translateX(-50%);
+  padding:11px 22px;border-radius:50px;
+  background:rgba(255,255,255,.14);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.2);
+  color:#fff;font-size:13px;font-weight:500;
+  z-index:999;white-space:nowrap;
+}
+.toast.on{display:block;animation:ta 3s ease;}
+@keyframes ta{
+  0%{opacity:0;transform:translateX(-50%) translateY(16px);}
+  15%{opacity:1;transform:translateX(-50%) translateY(0);}
+  80%{opacity:1;}100%{opacity:0;}
+}
+
+/* glows */
+.glow-g{box-shadow:0 0 18px rgba(34,197,94,.2);}
+.glow-b{box-shadow:0 0 18px rgba(59,130,246,.2);}
+.glow-r{box-shadow:0 0 18px rgba(239,68,68,.2);}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+
+<!-- ═══ SETUP ═══ -->
+<div id="setupScreen" class="g">
+  <div style="font-size:44px;margin-bottom:14px;">🎤</div>
+  <h2>Voice Note</h2>
+  <p>Bolo aur seedha pahunch jaaye</p>
+  <input id="setupName" type="text" placeholder="Apna naam (e.g. Sanjay)" maxlength="20">
+  <p style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:18px;">
+    Ye naam doosron ko dikhega
+  </p>
+  <button class="go-btn" onclick="setupUser()">Shuru Karo →</button>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div id="appScreen">
+
+  <!-- user bar -->
+  <div class="ubar">
+    <span class="uname" id="dispName">Namaste!</span>
+    <span class="uid" id="dispId" onclick="copyId()">📋 Copy ID</span>
+  </div>
+
+  <!-- live bar -->
+  <div class="livebar g" id="liveBar">
+    <div class="pulse"></div>
+    <div class="livetext" id="liveText">Sun raha hoon...</div>
+  </div>
+
+  <!-- result -->
+  <div class="res" id="resBar"></div>
+
+  <!-- STATUS PILL -->
+  <div class="spill g glow-g" id="spill" onclick="toggleListen()">
+    <div class="sdot" id="sdot">🎤</div>
+    <div>
+      <div class="slabel" id="slabel">Sun raha hoon...</div>
+      <div class="ssub" id="ssub">Tap karke band karo</div>
+    </div>
+    <div class="sarrow">⌃</div>
+  </div>
+
+  <!-- CC GRID -->
+  <div class="grid">
+    <!-- inbox big pill -->
+    <div class="bp g" onclick="openM('inbox')">
+      <div class="bpico">📩</div>
+      <div>
+        <div class="bplbl">Inbox</div>
+        <div class="bpsub" id="inboxSub">Koi message nahi</div>
+      </div>
+    </div>
+
+    <!-- sent tall -->
+    <div class="tp g" onclick="openM('sent')">
+      <div class="tpico">📤</div>
+      <div class="tpnum" id="sentNum">0</div>
+      <div class="tplbl">Bheje Gaye</div>
+    </div>
+
+    <!-- contacts tall -->
+    <div class="tp g" onclick="openM('contacts')">
+      <div class="tpico">👥</div>
+      <div class="tpnum" id="cntNum">0</div>
+      <div class="tplbl">Contacts</div>
+    </div>
+
+    <!-- unread pill -->
+    <div class="bp gd" onclick="openM('inbox')">
+      <div class="bpico">🔔</div>
+      <div>
+        <div class="bplbl" id="unreadLbl">0 unread</div>
+        <div class="bpsub">New messages</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CIRCLE ROW -->
+  <div class="crow">
+    <div class="cb g glow-g" id="micCb" onclick="toggleListen()">
+      <div class="cbico" id="micIco">🎤</div>
+      <div class="cblbl">Mic</div>
+    </div>
+    <div class="cb g" onclick="openM('contacts')">
+      <div class="cbico">➕</div>
+      <div class="cblbl">Contact</div>
+    </div>
+    <div class="cb g" onclick="copyId()">
+      <div class="cbico">🆔</div>
+      <div class="cblbl">My ID</div>
+    </div>
+    <div class="cb g" id="fbCb">
+      <div class="cbico" id="fbIco">☁️</div>
+      <div class="cblbl" id="fbLbl">Online</div>
+    </div>
+  </div>
+
+  <!-- hint -->
+  <div class="hint" id="hint">Bolo: "Contact ko kal meeting hai"</div>
+
+</div>
+
+<!-- ═══ MODALS ═══ -->
+<div class="mbg" id="mInbox" onclick="closeM('inbox')">
+  <div class="msheet gd" onclick="event.stopPropagation()">
+    <div class="mhandle"></div>
+    <div class="mtitle">📩 Inbox</div>
+    <div id="inboxList"></div>
+  </div>
+</div>
+
+<div class="mbg" id="mSent" onclick="closeM('sent')">
+  <div class="msheet gd" onclick="event.stopPropagation()">
+    <div class="mhandle"></div>
+    <div class="mtitle">📤 Bheje Gaye</div>
+    <div id="sentList"></div>
+  </div>
+</div>
+
+<div class="mbg" id="mContacts" onclick="closeM('contacts')">
+  <div class="msheet gd" onclick="event.stopPropagation()">
+    <div class="mhandle"></div>
+    <div class="mtitle">👥 Contacts</div>
+    <div class="addrow">
+      <input class="addinp" id="addInp" placeholder="Contact ka ID dalo">
+      <button class="addbtn" onclick="addContact()">Add</button>
+    </div>
+    <div id="cList"></div>
+    <p style="font-size:10px;color:rgba(255,255,255,.3);text-align:center;line-height:1.8;margin-top:10px;">
+      ID share karo → add karo → bolo "<b style="color:rgba(255,255,255,.5);">Jagtar ko kal meeting hai</b>"<br>
+      Offline bhi kaam karta hai ✓
+    </p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script>
+const SERVER_URL='https://YOUR-SITE.netlify.app'; // apna Netlify URL yahan dalo
+const FC={apiKey:"AIzaSyBOfu9Rg0xRODARMy7VF1wFPQuQ1coq7KM",authDomain:"voice-note-c1f8e.firebaseapp.com",databaseURL:"https://voice-note-c1f8e-default-rtdb.firebaseio.com",projectId:"voice-note-c1f8e",storageBucket:"voice-note-c1f8e.firebasestorage.app",messagingSenderId:"892933331078",appId:"1:892933331078:web:3b01189f1ced843d571907"};
+let fbOk=false;
+try{firebase.initializeApp(FC);fbOk=true;}catch(e){}
+
+let myName=localStorage.getItem('vn_name')||'';
+let myId=localStorage.getItem('vn_id')||'';
+let contacts=JSON.parse(localStorage.getItem('vn_contacts')||'[]');
+let inbox=JSON.parse(localStorage.getItem('vn_inbox')||'[]');
+let sent=JSON.parse(localStorage.getItem('vn_sent')||'[]');
+let queue=JSON.parse(localStorage.getItem('vn_queue')||'[]'); // offline queue
+let listening=false,processing=false,rec=null,mr=null,chunks=[],stream=null,rtmr=null;
+let isOnline=navigator.onLine;
+
+// ── ONLINE/OFFLINE DETECT ──
+window.addEventListener('online', ()=>{
+  isOnline=true;
+  document.getElementById('fbLbl').textContent='Online';
+  document.getElementById('fbIco').textContent='☁️';
+  // Net wapas aaya — queue me se bhejo
+  flushQueue();
+});
+window.addEventListener('offline', ()=>{
+  isOnline=false;
+  document.getElementById('fbLbl').textContent='Offline';
+  document.getElementById('fbIco').textContent='📵';
+});
+
+// SETUP
+function setupUser(){
+  let n=document.getElementById('setupName').value.trim();
+  if(!n){toast('Naam likho pehle');return;}
+  myName=n;
+  myId=n.toLowerCase().replace(/\s+/g,'')+'_'+(1000+Math.floor(Math.random()*9000));
+  localStorage.setItem('vn_name',myName);
+  localStorage.setItem('vn_id',myId);
+  showApp();
+}
+function showApp(){
+  document.getElementById('setupScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  document.getElementById('dispName').textContent='Hi, '+myName;
+  document.getElementById('dispId').textContent='ID: '+myId;
+  updateCounts();updateHint();
+  listenFB();
+  setTimeout(startListen,600);
+  if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
+  // Android background service ko user info do
+  if(window.Android){
+    try{window.Android.saveUser(myId,myName);}catch(e){}
+    try{window.Android.saveContacts(JSON.stringify(contacts));}catch(e){}
+  }
+}
+if(myName&&myId)showApp();
+
+function copyId(){
+  navigator.clipboard.writeText(myId).then(()=>toast('✓ ID copy ho gaya!')).catch(()=>toast('ID: '+myId));
+}
+
+// CONTACTS
+function addContact(){
+  let id=document.getElementById('addInp').value.trim().toLowerCase();
+  if(!id){toast('ID dalo');return;}
+  if(id===myId){toast('Apna ID nahi!');return;}
+  if(contacts.find(c=>c.id===id)){toast('Pehle se hai');return;}
+  let n=id.split('_')[0];let name=n[0].toUpperCase()+n.slice(1);
+  contacts.push({id,name});
+  localStorage.setItem('vn_contacts',JSON.stringify(contacts));
+  document.getElementById('addInp').value='';
+  renderContacts();updateCounts();updateHint();
+  toast('✓ '+name+' add ho gaya!');
+  // Android ko contacts sync karo
+  if(window.Android){try{window.Android.saveContacts(JSON.stringify(contacts));}catch(e){}}
+}
+function removeContact(id){
+  contacts=contacts.filter(c=>c.id!==id);
+  localStorage.setItem('vn_contacts',JSON.stringify(contacts));
+  renderContacts();updateCounts();updateHint();
+}
+function renderContacts(){
+  let el=document.getElementById('cList');
+  if(!contacts.length){el.innerHTML='<div class="empty">Koi contact nahi. Upar ID daalke add karo.</div>';return;}
+  el.innerHTML=contacts.map(c=>`<div class="crow2"><div class="cav">${c.name[0]}</div><div><div class="cnm">${c.name}</div><div class="cid2">${c.id}</div></div><button class="xbtn" onclick="removeContact('${c.id}')">✕</button></div>`).join('');
+}
+function updateHint(){
+  let n=contacts.length?contacts[0].name:'Contact';
+  document.getElementById('hint').innerHTML='Bolo: "<b style="color:rgba(255,255,255,.6);">'+n+' ko kal meeting hai</b>"';
+}
+function updateCounts(){
+  document.getElementById('cntNum').textContent=contacts.length;
+  document.getElementById('sentNum').textContent=sent.length;
+  let u=inbox.filter(m=>!m.read).length;
+  document.getElementById('unreadLbl').textContent=u+' unread';
+  document.getElementById('inboxSub').textContent=inbox.length?inbox.length+' messages':'Koi message nahi';
+}
+
+// COMMAND PARSE
+function parseCmd(text){
+  if(!text||text.length<4)return null;
+  // Devanagari "को" → "ko" normalize karo
+  let lo=text.toLowerCase().trim().replace(/को/g,' ko ').replace(/\s+/g,' ');
+
+  // "Mujhe X karna hai" → sabhi contacts ko bhejo
+  if(lo.startsWith('mujhe ')){
+    let msg=text.substring(6).trim();
+    if(msg.length<2)return null;
+    if(!contacts.length)return{notFound:true,name:'koi contact'};
+    return{broadcast:true,message:msg,full:text};
+  }
+
+  // "X ko bulao" → urgent ping bhejo
+  let bulaoMatch=lo.match(/^(.+?)\s+ko\s+bulao$/);
+  if(bulaoMatch){
+    let bname=bulaoMatch[1].trim();
+    let words2=bname.split(/\s+/);
+    let cb=null;
+    for(let w of words2){
+      cb=contacts.find(ct=>ct.name.toLowerCase()===w||ct.id.split('_')[0].toLowerCase()===w);
+      if(cb)break;
+    }
+    if(!cb)return{notFound:true,name:words2[words2.length-1]};
+    return{contact:cb,message:'🔔 Aapko bula rahe hain!',bulao:true,full:text};
+  }
+
+  let ki=lo.indexOf(' ko ');if(ki<1)return null;
+  let bk=lo.substring(0,ki).trim();
+  let msg=lo.substring(ki+4).trim();
+  if(!msg||msg.length<2)return null;
+  // Saare words try karo — sirf last nahi
+  let words=bk.split(/\s+/);
+  let c=null,name='';
+  for(let w of words){
+    if(w.length<2)continue;
+    c=contacts.find(ct=>ct.name.toLowerCase()===w||ct.id.split('_')[0].toLowerCase()===w);
+    if(c){name=w;break;}
+  }
+  if(!c){name=words[words.length-1];return{notFound:true,name};}
+  return{contact:c,message:msg,full:text};
+}
+
+// SPEECH
+function initRec(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){setStatus('Chrome chahiye','r');return false;}
+  rec=new SR();rec.lang='hi-IN';rec.continuous=true;rec.interimResults=true;
+  let fb='';
+  rec.onresult=function(e){
+    if(processing)return;
+    fb='';let im='';
+    for(let i=0;i<e.results.length;i++){
+      if(e.results[i].isFinal)fb+=e.results[i][0].transcript+' ';
+      else im+=e.results[i][0].transcript;
+    }
+    let d=(fb+im).trim();
+    if(d)showLive(d);
+    if(fb.trim()){
+      let cmd=parseCmd(fb.trim());
+      if(cmd){
+        if(cmd.notFound){toast('❌ "'+cmd.name+'" contacts me nahi — '+fb.trim());}
+        else{processing=true;rec.stop();doSend(cmd);}
+      } else {
+        // Command format nahi mila — user ko dikhao kya suna
+        showLive('🎤 Suna: "'+fb.trim()+'" — "[Naam] ko [message]" format mein bolo');
+      }
+    }
+  };
+  rec.onend=function(){
+    if(listening&&!processing){
+      clearTimeout(rtmr);
+      rtmr=setTimeout(()=>{try{rec.start();}catch(e){}},400);
+    }
+  };
+  rec.onerror=function(e){
+    if(e.error==='not-allowed'){setStatus('Mic permission do','r');listening=false;updateUI();return;}
+    if(listening&&!processing){clearTimeout(rtmr);rtmr=setTimeout(()=>{try{rec.start();}catch(e){}},600);}
+  };
+  return true;
+}
+function startListen(){
+  if(!rec&&!initRec())return;
+  listening=true;processing=false;updateUI();
+  getMic().then(()=>{try{rec.start();}catch(e){}});
+}
+function stopListen(){
+  listening=false;processing=false;clearTimeout(rtmr);
+  try{rec.stop();}catch(e){}relMic();updateUI();hideLive();
+}
+function toggleListen(){if(listening)stopListen();else startListen();}
+
+function updateUI(){
+  let sp=document.getElementById('spill');
+  let sd=document.getElementById('sdot');
+  let mc=document.getElementById('micCb');
+  let mi=document.getElementById('micIco');
+  if(processing){
+    sp.className='spill g glow-b';sd.className='sdot blue';sd.textContent='📤';
+    document.getElementById('slabel').textContent='Bhej raha hai...';
+    document.getElementById('ssub').textContent='';mi.textContent='📤';
+  }else if(listening){
+    sp.className='spill g glow-g';sd.className='sdot';sd.textContent='🎤';
+    document.getElementById('slabel').textContent='Sun raha hoon...';
+    document.getElementById('ssub').textContent='Tap karke band karo';
+    mi.textContent='🎤';mc.className='cb g glow-g';
+  }else{
+    sp.className='spill gd';sd.className='sdot red';sd.textContent='🔴';
+    document.getElementById('slabel').textContent='Band hai';
+    document.getElementById('ssub').textContent='Tap karke shuru karo';
+    mi.textContent='🔴';mc.className='cb g glow-r';
+  }
+}
+function setStatus(t,c){}
+function showLive(t){let b=document.getElementById('liveBar');document.getElementById('liveText').textContent=t;b.classList.add('on');}
+function hideLive(){document.getElementById('liveBar').classList.remove('on');}
+
+// AUDIO
+async function getMic(){
+  if(stream)return;
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:true});startChunk();}
+  catch(e){toast('Mic permission do');}
+}
+function startChunk(){
+  if(!stream)return;chunks=[];
+  let mime=MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'audio/webm';
+  try{mr=new MediaRecorder(stream,{mimeType:mime});}catch(e){mr=new MediaRecorder(stream);}
+  mr.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+  mr.start(500);
+}
+function relMic(){
+  if(mr&&mr.state!=='inactive')try{mr.stop();}catch(e){}
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+}
+function grabAudio(){
+  return new Promise(res=>{
+    if(!mr||mr.state==='inactive'){res(chunks.length?new Blob(chunks,{type:'audio/webm'}):null);return;}
+    mr.onstop=()=>res(chunks.length?new Blob(chunks,{type:'audio/webm'}):null);
+    try{mr.stop();}catch(e){res(null);}
+  });
+}
+
+// SEND
+async function doSend(cmd){
+  // BROADCAST — "Mujhe X" to all contacts
+  if(cmd.broadcast){
+    updateUI();showLive('📤 Sab ko bhej raha hai...');
+    for(let c of contacts){
+      let rid=c.id.replace(/\./g,'_');
+      let msg={from:myName,fromId:myId,message:myName+' ko '+cmd.message,
+               fullText:cmd.full,timestamp:Date.now(),read:false,recipientId:rid};
+      try{await firebase.database().ref('inbox/'+rid).push(msg);}catch(e){}
+    }
+    showRes('✓ Sab ko bhej diya!','ok');
+    toast('✓ Sab contacts ko bhej diya!');
+    setTimeout(()=>{hideLive();showRes('','');},3000);
+    resume();return;
+  }
+
+  // BULAO — FCM push notification bhejo Android pe
+  if(cmd.bulao){
+    updateUI();showLive('🔔 '+cmd.contact.name+' ko ping bhej raha hai...');
+    let safeId=cmd.contact.id.replace(/\./g,'_');
+    try{
+      let snap=await firebase.database().ref('tokens/'+safeId).get();
+      if(snap.exists()){
+        let fcmToken=snap.val();
+        await fetch(SERVER_URL+'/send',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({token:fcmToken,message:'Aapko bula rahe hain!',from:myName})
+        });
+        showRes('✓ '+cmd.contact.name+' ke phone pe notification gayi!','ok');
+        toast('🔔 '+cmd.contact.name+' ko ping bhej diya!');
+      } else {
+        // Token nahi mila — sirf DB message bhejo
+        let rid=cmd.contact.id.replace(/\./g,'_');
+        await firebase.database().ref('inbox/'+rid).push({from:myName,fromId:myId,message:'Aapko bula rahe hain! 🔔',bulao:true,timestamp:Date.now(),read:false});
+        toast('📩 '+cmd.contact.name+' ko message bheja (FCM token nahi mila)');
+      }
+    }catch(e){toast('Error: '+e.message);}
+    setTimeout(()=>{hideLive();showRes('','');},3000);
+    resume();return;
+  }
+
+  updateUI();showLive('📤 '+cmd.contact.name+' ko bhej raha hai...');
+  let blob=await grabAudio();let audio=null;
+  if(blob&&blob.size>500){try{let b=await b64(blob);if(b.length<8000000)audio=b;}catch(e){}}
+
+  let rid=cmd.contact.id.replace(/\./g,'_');
+  let msg={from:myName,fromId:myId,message:cmd.message,fullText:cmd.full,
+           timestamp:Date.now(),read:false,recipientId:rid};
+  if(audio)msg.audio=audio;
+
+  // Net off hai? Queue me save karo
+  if(!isOnline||!fbOk){
+    queue.push(msg);
+    localStorage.setItem('vn_queue',JSON.stringify(queue));
+    showRes('📥 Queue me save! Net aane pe apne aap bhej dega.','ok');
+    toast('Net nahi — queue me save ho gaya ✓');
+    // Sent log me bhi add karo
+    sent.unshift({to:cmd.contact.name,message:cmd.message,
+                  timestamp:Date.now(),queued:true});
+    if(sent.length>100)sent=sent.slice(0,100);
+    localStorage.setItem('vn_sent',JSON.stringify(sent));
+    updateCounts();
+    setTimeout(()=>{hideLive();showRes('','');},4000);
+    resume();return;
+  }
+
+  // Net on hai — seedha bhejo
+  try{
+    await firebase.database().ref('inbox/'+rid).push(msg);
+    showRes('✓ '+cmd.contact.name+' ko bhej diya!','ok');
+    toast('✓ '+cmd.contact.name+' ko bhej diya!');
+    sent.unshift({to:cmd.contact.name,message:cmd.message,timestamp:Date.now()});
+    if(sent.length>100)sent=sent.slice(0,100);
+    localStorage.setItem('vn_sent',JSON.stringify(sent));
+    updateCounts();
+  }catch(e){
+    // Firebase error — queue me daal do
+    queue.push(msg);
+    localStorage.setItem('vn_queue',JSON.stringify(queue));
+    showRes('📥 Queue me save! Net aane pe bhej dega.','ok');
+    toast('Error — queue me save ho gaya');
+  }
+  setTimeout(()=>{hideLive();showRes('','');},4000);
+  resume();
+}
+
+// Queue flush — net aane pe sab bhejo
+async function flushQueue(){
+  if(!queue.length||!fbOk)return;
+  let remaining=[];
+  for(let msg of queue){
+    let rid=msg.recipientId||msg.fromId;
+    try{
+      await firebase.database().ref('inbox/'+rid).push(msg);
+      toast('📤 Queue ka message bhej diya!');
+    }catch(e){
+      remaining.push(msg); // still failed, keep in queue
+    }
+  }
+  queue=remaining;
+  localStorage.setItem('vn_queue',JSON.stringify(queue));
+}
+function resume(){
+  processing=false;
+  if(listening){
+    if(!stream)getMic().then(()=>{setTimeout(()=>{try{rec.start();}catch(e){}updateUI();},500);});
+    else{startChunk();setTimeout(()=>{try{rec.start();}catch(e){}updateUI();},500);}
+  }
+}
+function showRes(t,c){let e=document.getElementById('resBar');e.textContent=t;e.className='res'+(c?' '+c:'');}
+function b64(blob){return new Promise((res,rej)=>{let r=new FileReader();r.onloadend=()=>res(r.result);r.onerror=rej;r.readAsDataURL(blob);});}
+
+// FIREBASE LISTEN
+function listenFB(){
+  if(!fbOk)return;
+  let ref=firebase.database().ref('inbox/'+myId.replace(/\./g,'_'));
+  ref.on('child_added',snap=>{
+    let msg=snap.val();msg.fbKey=snap.key;
+    if(inbox.find(m=>m.fbKey===msg.fbKey))return;
+    inbox.unshift(msg);
+    localStorage.setItem('vn_inbox',JSON.stringify(inbox));
+    updateCounts();
+    if(msg.bulao){
+      toast('🔔 '+( msg.from||'?')+' bula rahe hain!');
+      beepUrgent();
+      speak((msg.from||'Kisi')+ ' bula rahe hain');
+      showNotif(msg.from+' bula rahe hain!', '🔔 Urgent ping');
+    } else {
+      toast('📩 '+(msg.from||'?')+' ne bheja!');beep();
+      speakMsg(msg.from, msg.message);
+      showNotif(msg.from+' ka message', msg.message);
+    }
+  });
+  firebase.database().ref('.info/connected').on('value',s=>{
+    let ok=s.val();
+    document.getElementById('fbLbl').textContent=ok?'Online':'Offline';
+    document.getElementById('fbIco').textContent=ok?'☁️':'📵';
+  });
+}
+function beep(){try{let c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=0.25;o.start();o.stop(c.currentTime+0.2);}catch(e){}}
+function beepUrgent(){try{let c=new(window.AudioContext||window.webkitAudioContext)();[880,1100,880].forEach((f,i)=>{let o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;g.gain.value=0.4;o.start(c.currentTime+i*0.18);o.stop(c.currentTime+i*0.18+0.15);});}catch(e){}}
+function showNotif(title,body){
+  if(!('Notification'in window))return;
+  if(Notification.permission==='granted'){new Notification(title,{body,icon:'https://voice-note-c1f8e.web.app/manifest.json'});}
+  else if(Notification.permission!=='denied'){Notification.requestPermission().then(p=>{if(p==='granted')new Notification(title,{body});});}
+}
+
+// PAYTM JAISI AWAAZ — message aane pe bolega
+function speakMsg(from, message){
+  // "Sanjay ko aaj meeting karni hai"
+  let text = (from||'Kisi') + ' ko ' + (message||'');
+  speak(text);
+}
+function speak(text){
+  try{
+    window.speechSynthesis.cancel();
+    function doSpeak(){
+      let u = new SpeechSynthesisUtterance(text);
+      // Hindi available ho to use karo, warna English
+      let voices = window.speechSynthesis.getVoices();
+      let hiVoice = voices.find(v=>v.lang.startsWith('hi'));
+      if(hiVoice) u.voice = hiVoice;
+      u.lang = hiVoice ? 'hi-IN' : 'en-US';
+      u.rate = 0.85;
+      u.pitch = 1.1;
+      u.volume = 1;
+      window.speechSynthesis.speak(u);
+    }
+    // Voices load hone ka wait karo
+    if(window.speechSynthesis.getVoices().length > 0){
+      doSpeak();
+    } else {
+      window.speechSynthesis.onvoiceschanged = doSpeak;
+      setTimeout(doSpeak, 500); // fallback
+    }
+  }catch(e){}
+}
+
+// MODALS
+function openM(t){
+  if(t==='inbox'){renderInbox();document.getElementById('mInbox').classList.add('on');}
+  else if(t==='sent'){renderSent();document.getElementById('mSent').classList.add('on');}
+  else if(t==='contacts'){renderContacts();document.getElementById('mContacts').classList.add('on');}
+}
+function closeM(t){
+  document.getElementById(t==='inbox'?'mInbox':t==='sent'?'mSent':'mContacts').classList.remove('on');
+}
+
+function renderInbox(){
+  let el=document.getElementById('inboxList');
+  if(!inbox.length){el.innerHTML='<div class="empty">Koi voice note nahi aaya abhi tak</div>';return;}
+  let ft=ts=>{let d=new Date(ts),h=d.getHours(),m=d.getMinutes(),ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+(m<10?'0':'')+m+' '+ap+' | '+d.getDate()+'/'+(d.getMonth()+1);};
+  el.innerHTML=inbox.map((m,i)=>`<div class="irow ${m.read?'':'unread'}" onclick="playMsg(${i})"><div class="iav">${(m.from||'?')[0].toUpperCase()}</div><div style="flex:1"><div class="ifrom">${m.from||'?'}</div><div class="iprev">${m.message||m.fullText||''}</div><div class="itime">${ft(m.timestamp)}</div></div>${m.read?'':'<span class="nbadge">NEW</span>'}</div>`).join('');
+}
+function playMsg(i){
+  let m=inbox[i];m.read=true;
+  localStorage.setItem('vn_inbox',JSON.stringify(inbox));
+  renderInbox();updateCounts();
+  if(m.audio){let a=document.createElement('audio');a.src=m.audio;a.play().catch(()=>{});}
+  toast((m.from||'?')+': '+(m.message||''));
+}
+function renderSent(){
+  let el=document.getElementById('sentList');
+  if(!sent.length){el.innerHTML='<div class="empty">Kuch nahi bheja abhi tak</div>';return;}
+  let ft=ts=>{let d=new Date(ts),h=d.getHours(),m=d.getMinutes(),ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+(m<10?'0':'')+m+' '+ap;};
+  el.innerHTML=sent.map(m=>`<div class="srow"><div class="sav">→</div><div><div class="sto">${m.to}</div><div class="stxt">${m.message||''}</div><div class="stime">${ft(m.timestamp)}</div></div></div>`).join('');
+}
+
+function toast(msg){
+  let t=document.getElementById('toast');t.textContent=msg;
+  t.classList.remove('on');void t.offsetWidth;t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'),3000);
+}
+
+// Wake lock
+async function keepOn(){try{if('wakeLock'in navigator){let w=await navigator.wakeLock.request('screen');w.addEventListener('release',()=>{if(listening)keepOn();});}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&listening){keepOn();try{rec.start();}catch(e){}}});
+keepOn();
+</script>
+</body>
+</html>

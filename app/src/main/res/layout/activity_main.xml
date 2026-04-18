@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0a0a1a">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- ===== SETUP SCREEN ===== -->
+        <LinearLayout
+            android:id="@+id/setupScreen"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp"
+            android:minHeight="600dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Voice Note App"
+                android:textSize="26sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bolo aur voice note seedha pahunch jaaye!"
+                android:textSize="13sp"
+                android:textColor="#888888"
+                android:layout_marginBottom="28dp"/>
+
+            <EditText
+                android:id="@+id/setupNameInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Apna naam (e.g. Sanjay)"
+                android:textColor="#FFFFFF"
+                android:textColorHint="#555555"
+                android:background="@drawable/edit_background"
+                android:padding="14dp"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ye naam doosron ko dikhega jab voice note bhejoge"
+                android:textSize="11sp"
+                android:textColor="#555555"
+                android:layout_marginBottom="20dp"/>
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Shuru Karo"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:backgroundTint="#7c3aed"
+                android:textColor="#FFFFFF"
+                android:padding="14dp"
+                android:onClick="onSetupDone"/>
+
+        </LinearLayout>
+
+        <!-- ===== MAIN APP SCREEN ===== -->
+        <LinearLayout
+            android:id="@+id/mainScreen"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- Header -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#1a1a3e"
+                android:padding="16dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/dispName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Namaste!"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/dispId"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ID: loading..."
+                        android:textColor="#7c3aed"
+                        android:textSize="12sp"
+                        android:onClick="copyId"/>
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sun raha hoon"
+                    android:textColor="#22c55e"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+
+            <!-- Status hint -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bolo: Jagtar ko kal meeting hai - seedha pahunch jayega!"
+                android:textColor="#888888"
+                android:textSize="12sp"
+                android:padding="12dp"
+                android:background="#111111"
+                android:gravity="center"/>
+
+            <!-- Tabs -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#111111"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Inbox"
+                    android:textColor="#7c3aed"
+                    android:textSize="13sp"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:tag="inbox"
+                    android:onClick="showTab"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Sent"
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:tag="sent"
+                    android:onClick="showTab"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Contacts"
+                    android:textColor="#666666"
+                    android:textSize="13sp"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:tag="contacts"
+                    android:onClick="showTab"/>
+
+            </LinearLayout>
+
+            <!-- INBOX TAB -->
+            <LinearLayout
+                android:id="@+id/tabInbox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="INBOX"
+                        android:textColor="#888888"
+                        android:textSize="12sp"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/inboxBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#3b82f6"
+                        android:textSize="12sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/inboxList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"/>
+            </LinearLayout>
+
+            <!-- SENT TAB -->
+            <LinearLayout
+                android:id="@+id/tabSent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="BHEJE GAYE"
+                    android:textColor="#888888"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:padding="16dp"/>
+
+                <LinearLayout
+                    android:id="@+id/sentList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"/>
+            </LinearLayout>
+
+            <!-- CONTACTS TAB -->
+            <LinearLayout
+                android:id="@+id/tabContacts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="CONTACTS"
+                    android:textColor="#888888"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:padding="16dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:paddingBottom="8dp">
+
+                    <EditText
+                        android:id="@+id/addContactInput"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="Contact ka ID dalo"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#555555"
+                        android:background="@drawable/edit_background"
+                        android:padding="10dp"
+                        android:textSize="13sp"
+                        android:layout_marginEnd="8dp"/>
+
+                    <Button
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Add"
+                        android:backgroundTint="#7c3aed"
+                        android:textColor="#FFFFFF"
+                        android:onClick="onAddContact"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/contactsList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Kaise kaam karta hai:\n1. Dono log app kholein\n2. Apna ID note karo (upar tap karo copy karne ke liye)\n3. Ek doosre ka ID add karo\n4. Bolo: Jagtar ko kal meeting hai\n5. Voice note seedha pahunch jayega!\n\nOffline bhi kaam karta hai - jab bhi net aayega message mil jayega!\n\nPhone restart karne pe bhi app khud start ho jayegi."
+                    android:textColor="#666666"
+                    android:textSize="12sp"
+                    android:lineSpacingMultiplier="1.5"
+                    android:padding="16dp"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

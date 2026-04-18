@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="#0d1a0d"
+    android:padding="12dp"
+    android:layout_margin="4dp"
+    android:gravity="center_vertical">
+
+    <!-- Avatar -->
+    <TextView
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:gravity="center"
+        android:textSize="16sp"
+        android:textColor="#FFFFFF"
+        android:background="#22c55e"
+        android:text="→"/>
+
+    <!-- Sent info -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="12dp">
+
+        <TextView
+            android:id="@+id/sentTo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="→ Jagtar"
+            android:textColor="#22c55e"
+            android:textSize="13sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/sentText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Kal meeting hai"
+            android:textColor="#666666"
+            android:textSize="12sp"/>
+
+        <TextView
+            android:id="@+id/sentTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="10:30 AM"
+            android:textColor="#555555"
+            android:textSize="11sp"/>
+    </LinearLayout>
+
+</LinearLayout>

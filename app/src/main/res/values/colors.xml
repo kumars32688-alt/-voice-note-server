@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App color palette -->
+<resources>
+    <!-- Primary brand color -->
+    <color name="primary">#6200EE</color>
+    <color name="primary_dark">#3700B3</color>
+    <color name="accent">#03DAC5</color>
+
+    <!-- Background colors -->
+    <color name="background">#FFF5F5F5</color>
+    <color name="card_background">#FFFFFFFF</color>
+    <color name="recording_bg">#FFFFF3E0</color>
+
+    <!-- Text colors -->
+    <color name="text_primary">#FF212121</color>
+    <color name="text_secondary">#FF757575</color>
+    <color name="text_hint">#FFBDBDBD</color>
+
+    <!-- Status bar -->
+    <color name="status_bar">#3700B3</color>
+</resources>

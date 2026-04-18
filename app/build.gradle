@@ -1,0 +1,49 @@
+// App-level build file
+
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'  // Firebase plugin
+}
+
+android {
+    namespace 'com.voicenote.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.voicenote.app"
+        minSdk 24          // Android 7.0+
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    // Android core
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
+    // Firebase Realtime Database (voice notes send/receive)
+    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    implementation 'com.google.firebase:firebase-database'
+    // FCM Push Notifications
+    implementation 'com.google.firebase:firebase-messaging'
+
+    // No extra library needed for:
+    // - SpeechRecognizer (Android built-in)
+    // - MediaRecorder (Android built-in)
+    // - TextToSpeech (Android built-in)
+}

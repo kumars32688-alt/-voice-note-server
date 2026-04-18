@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="#111111"
+    android:padding="12dp"
+    android:layout_margin="4dp"
+    android:gravity="center_vertical">
+
+    <!-- Avatar circle -->
+    <TextView
+        android:id="@+id/contactAvatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:textSize="18sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:background="#7c3aed"
+        android:text="J"/>
+
+    <!-- Name + ID -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="12dp">
+
+        <TextView
+            android:id="@+id/contactName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Jagtar"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/contactId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="jagtar_1234"
+            android:textColor="#666666"
+            android:textSize="11sp"/>
+    </LinearLayout>
+
+    <!-- Delete button -->
+    <TextView
+        android:id="@+id/contactDel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="✕"
+        android:textColor="#555555"
+        android:textSize="20sp"
+        android:padding="8dp"/>
+
+</LinearLayout>
