@@ -11,6 +11,7 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import com.google.firebase.database.*;
+import com.google.firebase.database.ChildEventListener;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.*;
@@ -81,6 +82,11 @@ public class VoiceListenService extends Service {
 
         // Create notification channels
         createNotificationChannels();
+
+        // Firebase inbox sun'na shuru karo
+        if (myId != null && !myId.isEmpty()) {
+            listenForInbox();
+        }
     }
 
     @Override
@@ -231,36 +237,87 @@ public class VoiceListenService extends Service {
 
     // ── COMMAND DETECTION ─────────────────────────────────────────────────
 
-    /** "[Name] ko [message]" pattern dhundho */
+    /** "[Name] ko [message]" ya "[Name] ko bulao" pattern dhundho */
     private CommandResult parseCommand(String text) {
         if (text == null || text.length() < 4) return null;
-        String lower = text.toLowerCase().trim();
+        String lower = text.toLowerCase().trim()
+                .replace("को", " ko ").replaceAll("\\s+", " ");
 
-        // " ko " hona chahiye text me
+        // "ko bulao" — urgent ping
+        if (lower.matches(".*\\bko bulao$")) {
+            String beforeKo = lower.replaceAll("\\s*ko bulao$", "").trim();
+            String[] words = beforeKo.split("\\s+");
+            for (String w : words) {
+                for (MainActivity.Contact c : contacts) {
+                    if (c.name.toLowerCase().equals(w) || c.id.split("_")[0].equals(w)) {
+                        return new CommandResult(c, "Aapko bula rahe hain! 🔔", text, true);
+                    }
+                }
+            }
+        }
+
         int koIdx = lower.indexOf(" ko ");
         if (koIdx < 1) return null;
 
         String beforeKo = lower.substring(0, koIdx).trim();
-        String message  = text.substring(koIdx + 4).trim(); // original case
-
+        String message   = text.substring(koIdx + 4).trim();
         if (message.length() < 2) return null;
 
-        // "ko" se pehle ka aakhiri word = contact ka naam
         String[] words = beforeKo.split("\\s+");
-        String name = words[words.length - 1];
-        if (name.length() < 2) return null;
-
-        // Contacts me dhundho
-        for (MainActivity.Contact c : contacts) {
-            if (c.name.toLowerCase().equals(name)
-                    || c.id.split("_")[0].equals(name)) {
-                return new CommandResult(c, message, text);
+        for (String w : words) {
+            if (w.length() < 2) continue;
+            for (MainActivity.Contact c : contacts) {
+                if (c.name.toLowerCase().equals(w) || c.id.split("_")[0].equals(w)) {
+                    return new CommandResult(c, message, text, false);
+                }
             }
         }
 
-        // Contact nahi mila
-        Log.d(TAG, "Contact not found: " + name);
+        Log.d(TAG, "Contact not found in: " + text);
         return null;
+    }
+
+    /** Firebase inbox listen karo — message aaye to speak karo */
+    private void listenForInbox() {
+        String safeId = myId.replace(".", "_");
+        firebaseDb.child("inbox").child(safeId)
+                .addChildEventListener(new ChildEventListener() {
+                    @Override
+                    public void onChildAdded(DataSnapshot snap, String prev) {
+                        try {
+                            String from    = snap.child("from").getValue(String.class);
+                            String message = snap.child("message").getValue(String.class);
+                            Boolean bulao  = snap.child("bulao").getValue(Boolean.class);
+                            String audio   = snap.child("audio").getValue(String.class);
+
+                            if (message == null) return;
+
+                            if (Boolean.TRUE.equals(bulao)) {
+                                // Urgent ping — zyada awaaz se bolo
+                                showInboxNotification(VoiceListenService.this,
+                                        from != null ? from : "Kisi ne",
+                                        "Aapko bula rahe hain! 🔔");
+                                speakMessage(VoiceListenService.this,
+                                        (from != null ? from : "Kisi ne") + " bula rahe hain");
+                            } else {
+                                showInboxNotification(VoiceListenService.this,
+                                        from != null ? from : "Kisi ne", message);
+                                if (audio != null && !audio.isEmpty()) {
+                                    playAudio(VoiceListenService.this, audio);
+                                } else {
+                                    speakMessage(VoiceListenService.this,
+                                            (from != null ? from : "Kisi ne") + " ka message: " + message);
+                                }
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "Inbox listen error: " + e.getMessage());
+                        }
+                    }
+                    @Override public void onChildChanged(DataSnapshot s, String p) {}
+                    @Override public void onChildRemoved(DataSnapshot s) {}
+                    @Override public void onChildMoved(DataSnapshot s, String p) {}
+                    @Override public void onCancelled(DatabaseError e) {}
+                });
     }
 
     // ── SEND VOICE NOTE ───────────────────────────────────────────────────
@@ -296,6 +353,7 @@ public class VoiceListenService extends Service {
         msg.put("fullText",  fullText);
         msg.put("timestamp", System.currentTimeMillis());
         msg.put("read",      false);
+        msg.put("bulao",     cmd.bulao);
 
         // Audio file encode karo (agar hai)
         String audioB64 = encodeAudioFile();
@@ -558,9 +616,10 @@ public class VoiceListenService extends Service {
         MainActivity.Contact contact;
         String message;
         String fullText;
+        boolean bulao;
 
-        CommandResult(MainActivity.Contact c, String msg, String full) {
-            this.contact = c; this.message = msg; this.fullText = full;
+        CommandResult(MainActivity.Contact c, String msg, String full, boolean bulao) {
+            this.contact = c; this.message = msg; this.fullText = full; this.bulao = bulao;
         }
     }
 }
